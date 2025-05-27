@@ -33,22 +33,38 @@ root.title("Word Warrior")
 question_label = tk.Label(root, text="Press Start to Begin", font=("Helvetica", 14))
 question_label.pack(pady=20)
 
-style = ttk.Style()
-style.theme_use('clam')  # Use a theme that supports bar styling
-style.configure("green.Horizontal.TProgressbar", throughcolor='white', background='green', thickness=20)
 
 
 buttons = []
 for i in range(4):  # Max 4 options for Hard
     btn = tk.Button(root, text="", width=50, font=("Helvetica", 12), state="disabled")
-    btn.pack(pady=5)
     buttons.append(btn)
 
 status_label = tk.Label(root, text="HP: You 100 | Monster 100", font=("Helvetica", 12))
 status_label.pack(pady=10)
 
-monster_health_bar = ttk.Progressbar(root, orient='horizontal', length=250, mode='determinate', style="green.Horizontal.TProgressbar", maximum=100)
-monster_health_bar.pack(pady=10)
+style = ttk.Style()
+style.theme_use('default')
+
+style.configure("green.Horizontal.TProgressbar",
+                troughcolor='white',
+                background='green',
+                bordercolor='white',
+                lightcolor='green',
+                darkcolor='green')
+
+style.map("green.Horizontal.TProgressbar",
+          background=[('active', 'green'), ('!active', 'green')])
+
+monster_health_bar = ttk.Progressbar(
+    root,
+    orient='horizontal',
+    length=200,
+    mode='determinate',
+    style="green.Horizontal.TProgressbar"  # <- Use the style
+)
+monster_health_bar.pack(pady=5)
+monster_health_bar['maximum'] = 100
 monster_health_bar['value'] = 100
 
 
@@ -83,6 +99,10 @@ def start_game():
     score_label.config(text="Score: 0")
     status_label.config(text="HP: You 100 | Monster 100")
     start_btn.pack_forget()
+    for btn in buttons:
+        btn.pack_forget()
+    for i in range(num_choices):
+        buttons[i].pack(pady=5)
     next_question()
 
 
@@ -112,9 +132,6 @@ def check_answer(selected):
     if correct:
         monster_hp -= damage
         monster_health_bar['value'] = max(monster_hp, 0)  # Prevents it from going below 0
-        animate_bar(monster_health_bar, monster_health_bar['value'], max(monster_hp, 0))
-        monster_health_bar['value'] = monster_hp
-        fix_bar_color(monster_health_bar)
         score += 1
         status_label.config(text=f"✅ Correct! You hit the monster for {damage} damage.")
     else:
@@ -133,6 +150,25 @@ def check_answer(selected):
     # Check for game over after delay
     root.after(1000, lambda: handle_after_answer())
 
+def restart_game():
+    # Hide the next game button
+    next_game_btn.pack_forget()
+
+    # Reset labels
+    question_label.config(text="Choose Difficulty to Begin")
+    status_label.config(text="")
+    score_label.config(text="Score: 0")
+    monster_health_bar['value'] = 100
+
+    # Hide answer buttons
+    for btn in buttons:
+        btn.pack_forget()
+
+    # Show difficulty options again
+    for btn in difficulty_buttons:
+        btn.pack(pady=5)
+
+next_game_btn = tk.Button(root, text="Next Game", font=("Helvetica", 12), command=restart_game)
 
 def handle_after_answer():
     # Reset button colors
@@ -143,29 +179,15 @@ def handle_after_answer():
     if monster_hp <= 0:
         messagebox.showinfo("Victory", f"You won! 🎉\nFinal score: {score}\nYour HP: {player_hp}")
         for btn in buttons:
-            btn.config(state="disabled")
+            btn.pack_forget()  
+        next_game_btn.pack(pady=20) 
     elif player_hp <= 0:
         messagebox.showinfo("Defeat", f"You lost! 💀\nFinal score: {score}")
         for btn in buttons:
-            btn.config(state="disabled")
+            btn.pack_forget()
+        next_game_btn.pack(pady=20)
     else:
         next_question()
-    monster_health_bar['value'] = 0
-
-
-def animate_bar(bar, start, end, step=-1):
-    if start <= end:
-        bar['value'] = end
-        return
-    bar['value'] = start
-    bar.config(style='green.Horizontal.TProgressbar')
-    root.after(10, lambda: animate_bar(bar, start + step, end, step))
-
-def fix_bar_color(bar):
-    bar.config(style="green.Horizontal.TProgressbar")
-    bar.update_idletasks()
-
-
 
 
 
